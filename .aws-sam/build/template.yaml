@@ -1,59 +1,62 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: Tsukiji Bingo minimal stack
-
 Resources:
   BingoTable:
     Type: AWS::DynamoDB::Table
     Properties:
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
-        - AttributeName: gameId
-          AttributeType: S
+      - AttributeName: gameId
+        AttributeType: S
       KeySchema:
-        - AttributeName: gameId
-          KeyType: HASH
-
+      - AttributeName: gameId
+        KeyType: HASH
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       CorsConfiguration:
         AllowOrigins:
-          - '*'
+        - '*'
         AllowHeaders:
-          - '*'
+        - '*'
         AllowMethods:
-          - GET
-          - POST
-          - OPTIONS
-
+        - GET
+        - POST
+        - OPTIONS
   BingoApi:
     Type: AWS::Serverless::Function
     Properties:
       Runtime: python3.12
       Handler: app.handler
-      CodeUri: lambda/
+      CodeUri: BingoApi
       Environment:
         Variables:
-          TABLE_NAME: !Ref BingoTable
+          TABLE_NAME:
+            Ref: BingoTable
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BingoTable
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: BingoTable
       Events:
         GetState:
           Type: HttpApi
           Properties:
             Path: /games/{id}
             Method: GET
-            ApiId: !Ref HttpApi
+            ApiId:
+              Ref: HttpApi
         Toggle:
           Type: HttpApi
           Properties:
             Path: /games/{id}/toggle
             Method: POST
-            ApiId: !Ref HttpApi
-
+            ApiId:
+              Ref: HttpApi
+    Metadata:
+      SamResourceId: BingoApi
 Outputs:
   ApiUrl:
     Description: Base URL of HTTP API
-    Value: !Sub 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Value:
+      Fn::Sub: https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com

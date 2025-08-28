@@ -1,0 +1,1 @@
+aws logs tail /aws/lambda/tsukiji-bingo-BingoApi-EPtHpTSwB3Yg --since 10m --follow
