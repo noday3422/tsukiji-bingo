@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>築地ビンゴ</title>
 <style>
-
 :root {
   --gap: 6px;
-  --primary: #cc0000;       /* アクセントカラー */
-  --bg: #f9f9fb;            /* ページ背景 */
-  --cell-bg: #ffffff;       /* マス背景 */
-  --cell-marked: #ffecec;   /* マーク済み背景 */
+  --primary: #cc0000;
+  --bg: #f9f9fb;
+  --cell-bg: #ffffff;
+  --cell-marked: #ffecec;
+  --title-gradient: linear-gradient(90deg, #cc0000, #ff6600);
+  --button-bg: linear-gradient(135deg, #ff6666, #cc0000);
 }
 
 body {
@@ -31,7 +32,7 @@ header {
 header h1 {
   font-size: 20px;
   font-weight: 700;
-  background: linear-gradient(90deg, #cc0000, #ff6600);
+  background: var(--title-gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -44,7 +45,7 @@ button {
   padding: 6px 12px;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(135deg, #ff6666, #cc0000);
+  background: var(--button-bg);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -81,7 +82,6 @@ button:hover {
   text-align: center;
   padding: 4px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  /* ← transformをtransition対象から外す */
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -92,22 +92,25 @@ button:hover {
   word-break: break-word;
 }
 
+.cell.marked {
+  border: 1px solid var(--primary);
+}
+
 .cell:hover {
-  /* transformをやめて揺れを防ぐ */
   box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-  background: #fefefe;  /* hover時に少し明るく */
+  background: #fefefe;
 }
 
 .cell:active {
-  /* スマホタップ時の視覚フィードバック */
   background: #f0f0f0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2) inset;
 }
+
 .hole {
   position: absolute;
   inset: 6px;
   border: 3px solid var(--primary);
-  border-radius: 50%;   /* ←ここを追加/変更して丸に */
+  border-radius: 50%;
   pointer-events: none;
   opacity: 0.9;
 }
@@ -118,11 +121,19 @@ button:hover {
     <h1 style="margin:0">築地ビンゴ</h1>
     <span id="gid" class="muted"></span>
     <button id="copy">URLをコピー</button>
+    <label for="theme">テーマ:</label>
+    <select id="theme">
+      <option value="default">赤</option>
+      <option value="baystars">ベイスターズ風</option>
+      <option value="night">ナイトゲーム風</option>
+      <option value="starman">スターマン風</option>
+    </select>
     <span id="status" class="muted"></span>
   </header>
   <div id="grid" class="grid"></div>
+
 <script>
-const API_BASE = "https://06zthxtipi.execute-api.ap-northeast-1.amazonaws.com"; // 例: https://abc123.execute-api.ap-northeast-1.amazonaws.com
+const API_BASE = "https://06zthxtipi.execute-api.ap-northeast-1.amazonaws.com"; // Lambda APIのURL
 const DEFAULT_GAME_ID = "tsukiji-2025";
 const params = new URLSearchParams(location.search);
 const gameId = params.get("id") || DEFAULT_GAME_ID;
@@ -165,11 +176,9 @@ async function toggle(i){
   finally{ updating = false; }
 }
 
-function render() {
+function render(){
   const grid = document.getElementById('grid');
-  
   if (grid.children.length === 25) {
-    // 既存DOMを更新するだけ
     [...grid.children].forEach((el, i) => {
       if (marks[i] === 1) {
         el.classList.add('marked');
@@ -183,24 +192,65 @@ function render() {
       }
     });
   } else {
-    // 初期生成（1回だけ走る）
-    grid.innerHTML = labels.map((t, i) =>
-      `<div class="cell" data-i="${i}"><p>${t}</p></div>`
-    ).join('');
-    for (const el of grid.querySelectorAll('.cell')) {
-      el.onclick = () => toggle(parseInt(el.dataset.i));
+    grid.innerHTML = labels.map((t, i)=>cellHtml(t, i)).join('');
+    for(const el of grid.querySelectorAll('.cell')){
+      el.onclick = ()=> toggle(parseInt(el.dataset.i));
     }
   }
+  document.getElementById('status').textContent = new Date().toLocaleTimeString('ja-JP') + ' 更新';
 }
 
 document.getElementById('copy').onclick = async ()=>{
   const url = `${location.origin}${location.pathname}?id=${encodeURIComponent(gameId)}`;
   await navigator.clipboard.writeText(url);
   document.getElementById('status').textContent = 'URLをコピー済み';
-}
+};
+
+/* テーマ定義 */
+const themes = {
+  default: {
+    "--primary": "#cc0000",
+    "--bg": "#f9f9fb",
+    "--cell-bg": "#ffffff",
+    "--cell-marked": "#ffecec",
+    "--title-gradient": "linear-gradient(90deg, #cc0000, #ff6600)",
+    "--button-bg": "linear-gradient(135deg, #ff6666, #cc0000)"
+  },
+  baystars: {
+    "--primary": "#005bac",
+    "--bg": "#e6f0fa",
+    "--cell-bg": "#ffffff",
+    "--cell-marked": "#dceeff",
+    "--title-gradient": "linear-gradient(90deg, #005bac, #00aaff)",
+    "--button-bg": "linear-gradient(135deg, #3399ff, #005bac)"
+  },
+  night: {
+    "--primary": "#002b5c",
+    "--bg": "#f5f7fa",
+    "--cell-bg": "#ffffff",
+    "--cell-marked": "#cce5ff",
+    "--title-gradient": "linear-gradient(90deg, #001f4d, #004080)",
+    "--button-bg": "linear-gradient(135deg, #336699, #002b5c)"
+  },
+  starman: {
+    "--primary": "#ff7f32",
+    "--bg": "#fef6ef",
+    "--cell-bg": "#ffffff",
+    "--cell-marked": "#fff0e5",
+    "--title-gradient": "linear-gradient(90deg, #ff7f32, #ffcc66)",
+    "--button-bg": "linear-gradient(135deg, #ff9966, #ff7f32)"
+  }
+};
+
+document.getElementById("theme").addEventListener("change", (e) => {
+  const t = themes[e.target.value];
+  for (const key in t) {
+    document.documentElement.style.setProperty(key, t[key]);
+  }
+});
 
 fetchState();
-setInterval(fetchState, 300); // ざっくり同期
+setInterval(fetchState, 300); // ポーリング間隔
 </script>
 </body>
 </html>
