@@ -7,12 +7,12 @@
 <style>
 :root {
   --gap: 6px;
-  --primary: #cc0000;
-  --bg: #f9f9fb;
-  --cell-bg: #ffffff;
-  --cell-marked: #ffecec;
-  --title-gradient: linear-gradient(90deg, #cc0000, #ff6600);
-  --button-bg: linear-gradient(135deg, #ff6666, #cc0000);
+  --primary: #005bac;   /* ベイスターズブルー */
+  --bg: #e6f0fa;        /* 薄い空色背景 */
+  --cell-bg: #ffffff;   /* 白 */
+  --cell-marked: #dceeff; /* 淡いブルー */
+  --title-gradient: linear-gradient(90deg, #005bac, #00aaff);
+  --button-bg: linear-gradient(135deg, #3399ff, #005bac);
 }
 
 body {
@@ -123,10 +123,9 @@ button:hover {
     <button id="copy">URLをコピー</button>
     <label for="theme">テーマ:</label>
     <select id="theme">
-      <option value="default">赤</option>
-      <option value="baystars">ベイスターズ風</option>
-      <option value="night">ナイトゲーム風</option>
-      <option value="starman">スターマン風</option>
+      <option value="baystars" selected>ベイスターズ</option>
+      <option value="night">ナイト</option>
+      <option value="starman">スターマン</option>
     </select>
     <span id="status" class="muted"></span>
   </header>
