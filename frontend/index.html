@@ -8,16 +8,58 @@
 
 :root {
   --gap: 6px;
+  --primary: #cc0000;       /* アクセントカラー */
+  --bg: #f9f9fb;            /* ページ背景 */
+  --cell-bg: #ffffff;       /* マス背景 */
+  --cell-marked: #ffecec;   /* マーク済み背景 */
 }
 
 body {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans JP", sans-serif;
   margin: 8px;
+  background: var(--bg);
+  color: #333;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(90deg, #cc0000, #ff6600);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.muted {
+  color: #666;
+  font-size: 12px;
+}
+
+button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #ff6666, #cc0000);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)); /* ←ここを修正 */
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--gap);
   width: 100%;
   max-width: 100vw;
@@ -26,9 +68,9 @@ body {
 
 .cell {
   position: relative;
-  border: 1px solid #aaa;
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: var(--cell-bg);
   cursor: pointer;
   aspect-ratio: 1 / 1;
   width: 100%;
@@ -38,45 +80,42 @@ body {
   justify-content: center;
   text-align: center;
   padding: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  /* ← transformをtransition対象から外す */
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .cell p {
   margin: 0;
-  font-size: 10px;    /* ←さらに小さめ */
-  line-height: 1.15;  /* ←行間をタイトに */
+  font-size: 10px;
+  line-height: 1.2;
   word-break: break-word;
 }
 
 .cell.marked {
-  background: #f4f4f4;
+  background: var(--cell-marked);
+  border: 1px solid var(--primary);
 }
 
+.cell:hover {
+  /* transformをやめて揺れを防ぐ */
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  background: #fefefe;  /* hover時に少し明るく */
+}
+
+.cell:active {
+  /* スマホタップ時の視覚フィードバック */
+  background: #f0f0f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2) inset;
+}
 .hole {
   position: absolute;
-  inset: 4px;
-  border: 3px solid #cc0000;
-  border-radius: 6px;
+  inset: 6px;
+  border: 3px solid var(--primary);
+  border-radius: 8px;
   pointer-events: none;
   opacity: 0.9;
 }
-
-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.muted {
-  color: #666;
-  font-size: 12px;
-}
-
-button {
-  padding: 6px 10px;
-}
-
 </style>
 </head>
 <body>
@@ -131,13 +170,32 @@ async function toggle(i){
   finally{ updating = false; }
 }
 
-function render(){
+function render() {
   const grid = document.getElementById('grid');
-  grid.innerHTML = labels.map((t, i)=>cellHtml(t, i)).join('');
-  for(const el of grid.querySelectorAll('.cell')){
-    el.onclick = ()=> toggle(parseInt(el.dataset.i));
+  
+  if (grid.children.length === 25) {
+    // 既存DOMを更新するだけ
+    [...grid.children].forEach((el, i) => {
+      if (marks[i] === 1) {
+        el.classList.add('marked');
+        if (!el.querySelector('.hole')) {
+          el.insertAdjacentHTML("beforeend", '<div class="hole"></div>');
+        }
+      } else {
+        el.classList.remove('marked');
+        const hole = el.querySelector('.hole');
+        if (hole) hole.remove();
+      }
+    });
+  } else {
+    // 初期生成（1回だけ走る）
+    grid.innerHTML = labels.map((t, i) =>
+      `<div class="cell" data-i="${i}"><p>${t}</p></div>`
+    ).join('');
+    for (const el of grid.querySelectorAll('.cell')) {
+      el.onclick = () => toggle(parseInt(el.dataset.i));
+    }
   }
-  document.getElementById('status').textContent = new Date().toLocaleTimeString('ja-JP') + ' 更新';
 }
 
 document.getElementById('copy').onclick = async ()=>{
