@@ -52,6 +52,19 @@ Resources:
             Path: /games/{id}/toggle
             Method: POST
             ApiId: !Ref HttpApi
+        Shuffle:
+          Type: HttpApi
+          Properties:
+            Path: /games/{id}/shuffle
+            Method: POST
+            ApiId: !Ref HttpApi
+        Reset:
+          Type: HttpApi
+          Properties:
+            Path: /games/{id}/reset
+            Method: POST
+            ApiId: !Ref HttpApi
+
 
 Outputs:
   ApiUrl:

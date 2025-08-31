@@ -57,6 +57,10 @@ button:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.2);
 }
+/* 盤の下のボタンだけ、上に余白を作る */
+#shuffle, #reset {
+  margin-top: 12px;   /* ← これだけでOK */
+}
 
 .grid {
   display: grid;
@@ -130,6 +134,9 @@ button:hover {
     <span id="status" class="muted"></span>
   </header>
   <div id="grid" class="grid"></div>
+  <div class="toolbar">
+    <button id="shuffle">シャッフル</button>
+  </div>
 
 <script>
 const API_BASE = "https://06zthxtipi.execute-api.ap-northeast-1.amazonaws.com"; // Lambda APIのURL
@@ -175,10 +182,38 @@ async function toggle(i){
   finally{ updating = false; }
 }
 
+async function shuffleBoard(){
+  if(!confirm("現在の並びをシャッフルします。よろしいですか？")) return;
+  try{
+    const r = await fetch(`${API_BASE}/games/${gameId}/shuffle`, {method:'POST'});
+    const j = await r.json();
+    labels = j.labels; marks = j.marks; render();
+  }catch(e){ console.error(e); }
+}
+
+async function resetBoard(){
+  if(!confirm("初期の配置にリセットします。よろしいですか？")) return;
+  try{
+    const r = await fetch(`${API_BASE}/games/${gameId}/reset`, {method:'POST'});
+    const j = await r.json();
+    labels = j.labels; marks = j.marks; render();
+  }catch(e){ console.error(e); }
+}
+
+document.getElementById("shuffle").onclick = shuffleBoard;
+//document.getElementById("reset").onclick = resetBoard;
+
 function render(){
   const grid = document.getElementById('grid');
+
   if (grid.children.length === 25) {
+    // 既存DOMを更新（★テキストも更新）
     [...grid.children].forEach((el, i) => {
+      // テキスト更新
+      const p = el.querySelector('p');
+      if (p && p.textContent !== labels[i]) p.textContent = labels[i];
+
+      // マーク更新
       if (marks[i] === 1) {
         el.classList.add('marked');
         if (!el.querySelector('.hole')) {
@@ -191,19 +226,20 @@ function render(){
       }
     });
   } else {
-    grid.innerHTML = labels.map((t, i)=>cellHtml(t, i)).join('');
+    // 初期生成
+    grid.innerHTML = labels.map((t, i)=>
+      `<div class="cell ${marks[i] ? 'marked':''}" data-i="${i}">
+         <p>${t.replaceAll('<','&lt;').replaceAll('>','&gt;')}</p>
+         ${marks[i] ? '<div class="hole"></div>' : ''}
+       </div>`
+    ).join('');
     for(const el of grid.querySelectorAll('.cell')){
       el.onclick = ()=> toggle(parseInt(el.dataset.i));
     }
   }
-  document.getElementById('status').textContent = new Date().toLocaleTimeString('ja-JP') + ' 更新';
+  document.getElementById('status').textContent =
+    new Date().toLocaleTimeString('ja-JP') + ' 更新';
 }
-
-document.getElementById('copy').onclick = async ()=>{
-  const url = `${location.origin}${location.pathname}?id=${encodeURIComponent(gameId)}`;
-  await navigator.clipboard.writeText(url);
-  document.getElementById('status').textContent = 'URLをコピー済み';
-};
 
 /* テーマ定義 */
 const themes = {
