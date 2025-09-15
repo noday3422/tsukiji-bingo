@@ -8,6 +8,17 @@
 - **DynamoDB**: 盤面の状態（labels, marks, updatedAt）を保持
 - 共有はURLパラメータ `?id=gameId` で識別。認証なし、CORS有効。
 
+## API
+- `GET /games/{id}`: 盤面の状態を取得
+- `POST /games/{id}/toggle` (body: `{index:number}`): 指定マスをトグル
+- `POST /games/{id}/shuffle`: ラベルとマークをペアのままシャッフル
+- `POST /games/{id}/reset`: デフォルトのお題順にリセット
+
+## フロントエンド
+- `frontend/index.html` がクライアント。S3に配置する。
+- APIのベースURLは `API_BASE` 定数で指定されているので、デプロイしたAPI GatewayのURLに書き換える。
+- 初期のお題は `lambda/app.py` の `DEFAULT_LABELS` で管理。
+
 ## 必要ツール
 - Python 3.12
 - AWS CLI
@@ -35,7 +46,11 @@ aws configure   # Access Key / Secret Key を入力
 
 ## デプロイ関連
 ### index.htmlのアップデート
+```bash
 aws s3 cp frontend/index.html s3://tsukiji-bingo-site/index.html --cache-control "no-store" --content-type text/html
+```
 
 ### それ以外
+```bash
 sam build && sam deploy --no-confirm-changeset
+```
